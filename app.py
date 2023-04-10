@@ -91,8 +91,7 @@ class ChatGPT:
             for child_id in node["children"]:
                 display_node(child_id, depth + 1)
 
-        root_id = self
-.conversation["current_node"]
+        root_id = self.conversation["current_node"]
         if root_id:
             while self.conversation["mapping"][root_id]["parent"]:
                 root_id = self.conversation["mapping"][root_id]["parent"]
