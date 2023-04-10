@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Simple Voice Chat Application</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  </head>
+  <body>
+    <h1>Simple Voice Chat Application</h1>
+    <button id="start">Start Listening</button>
+    <button id="stop" disabled>Stop Listening</button>
+    <p id="response"></p>
+
+    <script>
+      let mediaRecorder;
+      let recordedChunks = [];
+
+      $("#start").on("click", function () {
+        navigator.mediaDevices
+          .getUserMedia({ audio: true, video: false })
+          .then((stream) => {
+            mediaRecorder = new MediaRecorder(stream, {
+              mimeType: "audio/webm",
+            });
+            mediaRecorder.start();
+            recordedChunks = [];
+
+            mediaRecorder.ondataavailable = (e) => {
+              recordedChunks.push(e.data);
+            };
+
+            $("#start").prop("disabled", true);
+            $("#stop").prop("disabled", false);
+          })
+          .catch((err) => {
+            console.error("Error accessing microphone:", err);
+          });
+      });
+
+      $("#stop").on("click", function () {
+        mediaRecorder.stop();
+
+        mediaRecorder.onstop = () => {
+          const audioBlob = new Blob(recordedChunks, { type: "audio/webm" });
+          const formData = new FormData();
+          formData.append("audio_file", audioBlob, "audio.webm");
+
+          $.ajax({
+            url: "/voice-search",
+            type: "POST",
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function (data) {
+              $("#response").text(data.message);
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+              console.error("Error during AJAX request:", textStatus, errorThrown);
+              alert("Error: " + jqXHR.responseJSON.error);
+            },
+          });
+
+          $("#start").prop("disabled", false);
+          $("#stop").prop("disabled", true);
+        };
+      });
+    </script>
+  </body>
+</html>
